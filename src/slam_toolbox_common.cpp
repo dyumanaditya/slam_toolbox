@@ -154,6 +154,24 @@ void SlamToolbox::setParams()
 
   scan_queue_size_ = 1.0;
   scan_queue_size_ = this->declare_parameter("scan_queue_size", scan_queue_size_);
+  use_velocity_constraints_ = false;
+  if (!this->has_parameter("use_velocity_constraints")) {
+    this->declare_parameter("use_velocity_constraints", use_velocity_constraints_);
+  }
+  use_velocity_constraints_ = this->get_parameter("use_velocity_constraints").as_bool();
+
+  velocity_topic_ = std::string("/base_lin_vel");
+  if (!this->has_parameter("velocity_topic")) {
+    this->declare_parameter("velocity_topic", velocity_topic_);
+  }
+  velocity_topic_ = this->get_parameter("velocity_topic").as_string();
+  velocity_received_ = false;
+
+  scan_queue_size_ = 1;
+  if (!this->has_parameter("scan_queue_size")) {
+    this->declare_parameter("scan_queue_size", scan_queue_size_);
+  }
+  scan_queue_size_ = this->get_parameter("scan_queue_size").as_int();
 
   throttle_scans_ = 1;
   throttle_scans_ = this->declare_parameter("throttle_scans", throttle_scans_);
@@ -230,6 +248,14 @@ void SlamToolbox::setROSInterfaces()
     std::bind(&SlamToolbox::deserializePoseGraphCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
+  // subscribe to velocity
+  if (use_velocity_constraints_) {
+    velocity_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
+      velocity_topic_,
+      rclcpp::QoS(10),
+      std::bind(&SlamToolbox::velocityCallback, this, std::placeholders::_1));
+  }
+
   scan_filter_sub_ =
     std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
     shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
@@ -240,6 +266,19 @@ void SlamToolbox::setROSInterfaces()
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }
+
+/*****************************************************************************/
+void SlamToolbox::velocityCallback(
+  geometry_msgs::msg::TwistStamped::ConstSharedPtr twist)
+/*****************************************************************************/
+{
+  // smapper_->getMapper()->SetLatestVelocity(twist->twist);
+  latest_velocity_ = Vel2(twist->twist.linear.x, twist->twist.linear.y, twist->twist.angular.z);
+  velocity_received_ = true;
+  // RCLCPP_INFO(get_logger(), "Received velocity: %f, %f, %f",
+  //   twist->twist.linear.x, twist->twist.linear.y, twist->twist.angular.z);
+}
+
 
 /*****************************************************************************/
 void SlamToolbox::publishTransformLoop(
@@ -566,6 +605,11 @@ LocalizedRangeScan * SlamToolbox::addScan(
   // get our localized range scan
   LocalizedRangeScan * range_scan = getLocalizedRangeScan(
     laser, scan, odom_pose);
+
+  // Add velocity to the scan
+  if (use_velocity_constraints_ && velocity_received_) {
+    range_scan->SetVelocity(latest_velocity_);
+  }
 
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);

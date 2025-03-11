@@ -1446,6 +1446,45 @@ void MapperGraph::AddEdges(LocalizedRangeScan * pScan, const Matrix3 & rCovarian
       return;
     }
     LinkScans(pPrevScan, pScan, pScan->GetSensorPose(), rCovariance);
+
+    if (pPrevScan->HasVelocity()) {
+      // -------------- ADD VELOCITY CONSTRAINT ---------------
+      double dt = pScan->GetTime() - pPrevScan->GetTime();
+      if (dt < 0.0) {
+        dt = -dt;
+      }
+
+      // If there is a large time difference between first node and second node
+      // integration errors will accumulate and the velocity constraint might be inaccurate
+      // Constrain the max dt to 5 seconds
+      if (dt < 5.0) {
+
+        // Get the velocity associated with the previous scan
+        double base_vx = pPrevScan->GetVelocity().GetVx();
+        double base_vy = pPrevScan->GetVelocity().GetVy();
+        double base_vth = pPrevScan->GetVelocity().GetAngularVel();
+
+        // Transform velocity to the scan frame, using theta from the scan
+        // Get the heading of the previous scan
+        double prevScanTheta = pPrevScan->GetCorrectedPose().GetHeading();
+        double vx = base_vx * cos(prevScanTheta) - base_vy * sin(prevScanTheta);
+        double vy = base_vx * sin(prevScanTheta) + base_vy * cos(prevScanTheta);
+        double vth = base_vth;
+
+        double weight = 1.0; // tune me
+
+        int old_id = pPrevScan->GetUniqueId();
+        int new_id = pScan->GetUniqueId();
+
+        if (m_pMapper->m_pScanOptimizer != NULL) {
+          // auto ceres_solver = dynamic_cast<solver_plugins::CeresSolver*>(m_pMapper->m_pScanOptimizer);
+          // if (ceres_solver) {
+          //   ceres_solver->AddVelocityConstraint(old_id, new_id, vx, vy, vth, dt, weight);
+          // }
+          m_pMapper->m_pScanOptimizer->AddVelocityConstraint(old_id, new_id, vx, vy, vth, dt, weight);
+        }
+      }
+    }
   }
 
   Pose2Vector means;

@@ -38,6 +38,7 @@
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
+#include "geometry_msgs/msg/twist_stamped.hpp"
 
 #include "pluginlib/class_loader.hpp"
 
@@ -90,6 +91,10 @@ protected:
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp);
 
+  // Velocity callback
+  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_sub_;
+  void velocityCallback(geometry_msgs::msg::TwistStamped::ConstSharedPtr twist);
+
   // Loaders
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper> &, std::unique_ptr<karto::Dataset> &);
 
@@ -141,7 +146,10 @@ protected:
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph>> ssDesserialize_;
 
   // Storage for ROS parameters
-  std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
+  std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_, velocity_topic_;
+  bool use_velocity_constraints_;
+  Vel2 latest_velocity_;
+  bool velocity_received_ = false;
   bool use_map_saver_;
   rclcpp::Duration transform_timeout_, minimum_time_interval_;
   std_msgs::msg::Header scan_header;

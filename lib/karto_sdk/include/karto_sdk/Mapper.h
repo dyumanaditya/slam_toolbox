@@ -35,6 +35,8 @@
 #include "rclcpp/rclcpp.hpp"
 #include "Karto.h"  // NOLINT
 #include "nanoflann_adaptors.h"  // NOLINT
+#include <geometry_msgs/msg/twist.hpp>
+
 
 
 namespace karto
@@ -724,6 +726,8 @@ public:
   virtual ~MapperGraph();
 
 public:
+  bool use_velocity_constraints_ = false;
+
   /**
    * Adds a vertex representing the given scan to the graph
    * @param pScan
@@ -1005,6 +1009,18 @@ public:
    * Adds a constraint to the solver
    */
   virtual void AddConstraint(Edge<LocalizedRangeScan> * /*pEdge*/)
+  {
+  }
+
+  /**
+   * Adds velocity constraint to the solver
+   */
+  virtual void AddVelocityConstraint(
+    int old_node_id,
+    int new_node_id,
+    double vx, double vy, double vtheta,
+    double dt,
+    double weight)
   {
   }
 

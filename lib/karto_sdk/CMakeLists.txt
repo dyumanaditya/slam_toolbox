@@ -13,9 +13,11 @@ find_package(rclcpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED system serialization filesystem thread)
 find_package(TBB REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
+find_package(geometry_msgs REQUIRED)
 
 set(dependencies
   rclcpp
+  geometry_msgs
 )
 
 include_directories(include ${EIGEN3_INCLUDE_DIRS} 

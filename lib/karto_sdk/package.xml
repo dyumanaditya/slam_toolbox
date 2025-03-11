@@ -10,6 +10,8 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>geometry_msgs</depend>
+
   <build_depend>boost</build_depend>
   <build_depend>tbb</build_depend>
   <build_depend>libblas-dev</build_depend>
