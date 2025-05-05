@@ -38,7 +38,7 @@
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
-#include "geometry_msgs/msg/twist_stamped.hpp"
+#include <geometry_msgs/msg/twist_with_covariance_stamped.hpp>
 
 #include "pluginlib/class_loader.hpp"
 
@@ -92,8 +92,8 @@ protected:
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp);
 
   // Velocity callback
-  rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr velocity_sub_;
-  void velocityCallback(geometry_msgs::msg::TwistStamped::ConstSharedPtr twist);
+  rclcpp::Subscription<geometry_msgs::msg::TwistWithCovarianceStamped>::SharedPtr velocity_sub_;
+  void velocityCallback(geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr twist);
 
   // Loaders
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper> &, std::unique_ptr<karto::Dataset> &);

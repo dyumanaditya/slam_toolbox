@@ -1020,7 +1020,7 @@ public:
     int new_node_id,
     double vx, double vy, double vtheta,
     double dt,
-    double weight)
+    const Matrix3 & covariance)
   {
   }
 

@@ -2277,241 +2277,6 @@ typedef std::vector<Pose2> Pose2Vector;
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
 
-
-/**
- * Defines a velocity (vx, vy) in 2-dimensional space and angular velocity around the z-axis.
- */
-class Vel2
-{
-public:
-  /**
-   * Default Constructor
-   */
-  Vel2()
-  : m_AngularVel(0.0)
-  {
-  }
-
-  /**
-   * Constructor initializing velocity parameters
-   * @param rLinearVelocity linear velocity vector in the plane
-   * @param angularVel angular velocity around the z-axis
-   **/
-  Vel2(const Vector2<kt_double> & rLinearVelocity, kt_double angularVel)
-  : m_LinearVelocity(rLinearVelocity),
-    m_AngularVel(angularVel)
-  {
-  }
-
-  /**
-   * Constructor initializing velocity parameters
-   * @param vx velocity in x-direction
-   * @param vy velocity in y-direction
-   * @param angularVel angular velocity around the z-axis
-   **/
-  Vel2(kt_double vx, kt_double vy, kt_double angularVel)
-  : m_LinearVelocity(vx, vy),
-    m_AngularVel(angularVel)
-  {
-  }
-
-  /**
-   * Copy constructor
-   */
-  Vel2(const Vel2 & rOther)
-  : m_LinearVelocity(rOther.m_LinearVelocity),
-    m_AngularVel(rOther.m_AngularVel)
-  {
-  }
-
-public:
-  /**
-   * Returns the velocity in the x-direction
-   * @return velocity in x-direction
-   */
-  inline kt_double GetVx() const
-  {
-    return m_LinearVelocity.GetX();
-  }
-
-  /**
-   * Sets the velocity in the x-direction
-   * @param vx velocity in x-direction
-   */
-  inline void SetVx(kt_double vx)
-  {
-    m_LinearVelocity.SetX(vx);
-  }
-
-  /**
-   * Returns the velocity in the y-direction
-   * @return velocity in y-direction
-   */
-  inline kt_double GetVy() const
-  {
-    return m_LinearVelocity.GetY();
-  }
-
-  /**
-   * Sets the velocity in the y-direction
-   * @param vy velocity in y-direction
-   */
-  inline void SetVy(kt_double vy)
-  {
-    m_LinearVelocity.SetY(vy);
-  }
-
-  /**
-   * Returns the linear velocity vector
-   * @return linear velocity vector
-   */
-  inline const Vector2<kt_double> & GetLinearVelocity() const
-  {
-    return m_LinearVelocity;
-  }
-
-  /**
-   * Sets the linear velocity vector
-   * @param rLinearVelocity linear velocity vector
-   */
-  inline void SetLinearVelocity(const Vector2<kt_double> & rLinearVelocity)
-  {
-    m_LinearVelocity = rLinearVelocity;
-  }
-
-  /**
-   * Returns the angular velocity around the z-axis
-   * @return angular velocity
-   */
-  inline kt_double GetAngularVel() const
-  {
-    return m_AngularVel;
-  }
-
-  /**
-   * Sets the angular velocity around the z-axis
-   * @param angularVel angular velocity
-   */
-  inline void SetAngularVel(kt_double angularVel)
-  {
-    m_AngularVel = angularVel;
-  }
-
-  /**
-   * Assignment operator
-   */
-  inline Vel2 & operator=(const Vel2 & rOther)
-  {
-    m_LinearVelocity = rOther.m_LinearVelocity;
-    m_AngularVel = rOther.m_AngularVel;
-    return *this;
-  }
-
-  /**
-   * Equality operator
-   */
-  inline bool operator==(const Vel2 & rOther) const
-  {
-    return m_LinearVelocity == rOther.m_LinearVelocity && m_AngularVel == rOther.m_AngularVel;
-  }
-
-  /**
-   * Inequality operator
-   */
-  inline bool operator!=(const Vel2 & rOther) const
-  {
-    return m_LinearVelocity != rOther.m_LinearVelocity || m_AngularVel != rOther.m_AngularVel;
-  }
-
-  /**
-   * In place Vel2 addition.
-   */
-  inline void operator+=(const Vel2 & rOther)
-  {
-    m_LinearVelocity += rOther.m_LinearVelocity;
-    m_AngularVel += rOther.m_AngularVel;
-  }
-
-  /**
-   * Binary Vel2 addition
-   * @param rOther another velocity
-   * @return sum of the velocities
-   */
-  inline Vel2 operator+(const Vel2 & rOther) const
-  {
-    return Vel2(m_LinearVelocity + rOther.m_LinearVelocity,
-                m_AngularVel + rOther.m_AngularVel);
-  }
-
-  /**
-   * Binary Vel2 subtraction
-   * @param rOther another velocity
-   * @return difference of the velocities
-   */
-  inline Vel2 operator-(const Vel2 & rOther) const
-  {
-    return Vel2(m_LinearVelocity - rOther.m_LinearVelocity,
-                m_AngularVel - rOther.m_AngularVel);
-  }
-
-  /**
-   * In place Vel2 subtraction.
-   */
-  inline void operator-=(const Vel2 & rOther)
-  {
-    m_LinearVelocity -= rOther.m_LinearVelocity;
-    m_AngularVel -= rOther.m_AngularVel;
-  }
-
-  /**
-   * Write this velocity onto an output stream
-   * @param rStream output stream
-   * @param rVel velocity object to write
-   */
-  friend inline std::ostream & operator<<(std::ostream & rStream, const Vel2 & rVel)
-  {
-    rStream << rVel.GetVx() << " " << rVel.GetVy() << " " << rVel.GetAngularVel();
-    return rStream;
-  }
-
-  /**
-   * Read velocity from an input stream
-   * @param rStream input stream
-   * @param rVel velocity object to populate
-   */
-  friend inline std::istream & operator>>(std::istream & rStream, Vel2 & rVel)
-  {
-    kt_double vx, vy, ang;
-    rStream >> vx >> vy >> ang;
-    rVel.SetLinearVelocity(Vector2<kt_double>(vx, vy));
-    rVel.SetAngularVel(ang);
-    return rStream;
-  }
-
-  // Serialization support
-  friend class boost::serialization::access;
-  template<class Archive>
-  void serialize(Archive & ar, const unsigned int version)
-  {
-    ar & BOOST_SERIALIZATION_NVP(m_LinearVelocity);
-    ar & BOOST_SERIALIZATION_NVP(m_AngularVel);
-  }
-
-private:
-  Vector2<kt_double> m_LinearVelocity;
-  kt_double m_AngularVel;
-};    // Vel2
-
-/**
- * Type declaration of Vel2 vector
- */
-typedef std::vector<Vel2> Vel2Vector;
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////
-
 /**
  * Defines a position and orientation in 3-dimensional space.
  * Karto uses a right-handed coordinate system with X, Y as the 2-D ground plane and X is forward and Y is left.
@@ -3075,6 +2840,292 @@ private:
 
   kt_double * m_pData;
 };    // Matrix
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+
+/**
+ * Defines a velocity (vx, vy) in 2-dimensional space and angular velocity around the z-axis.
+ */
+class Vel2
+{
+public:
+  /**
+   * Default Constructor
+   */
+  Vel2()
+  : m_AngularVel(0.0)
+  {
+  }
+
+  /**
+   * Constructor initializing velocity parameters
+   * @param rLinearVelocity linear velocity vector in the plane
+   * @param angularVel angular velocity around the z-axis
+   * @param covariance covariance matrix
+   **/
+  Vel2(const Vector2<kt_double> & rLinearVelocity, kt_double angularVel, Matrix3 covariance)
+  : m_LinearVelocity(rLinearVelocity),
+    m_AngularVel(angularVel),
+    covariance(covariance)
+  {
+  }
+  
+  /**
+   * Constructor initializing velocity parameters
+   * @param rLinearVelocity linear velocity vector in the plane
+   * @param angularVel angular velocity around the z-axis
+   **/
+  Vel2(const Vector2<kt_double> & rLinearVelocity, kt_double angularVel)
+  : m_LinearVelocity(rLinearVelocity),
+    m_AngularVel(angularVel)
+  {
+    covariance.Clear();
+  }
+
+  /**
+   * Constructor initializing velocity parameters
+   * @param vx velocity in x-direction
+   * @param vy velocity in y-direction
+   * @param angularVel angular velocity around the z-axis
+   * @param covariance covariance matrix
+   **/
+  Vel2(kt_double vx, kt_double vy, kt_double angularVel, Matrix3 covariance)
+  : m_LinearVelocity(vx, vy),
+    m_AngularVel(angularVel),
+    covariance(covariance)
+  {
+  }
+  
+  /**
+   * Constructor initializing velocity parameters
+   * @param vx velocity in x-direction
+   * @param vy velocity in y-direction
+   * @param angularVel angular velocity around the z-axis
+   **/
+  Vel2(kt_double vx, kt_double vy, kt_double angularVel)
+  : m_LinearVelocity(vx, vy),
+    m_AngularVel(angularVel)
+  {
+    covariance.Clear();
+  }
+
+  /**
+   * Copy constructor
+   */
+  Vel2(const Vel2 & rOther)
+  : m_LinearVelocity(rOther.m_LinearVelocity),
+    m_AngularVel(rOther.m_AngularVel),
+    covariance(rOther.covariance)
+  {
+  }
+
+public:
+  /**
+   * Returns the velocity in the x-direction
+   * @return velocity in x-direction
+   */
+  inline kt_double GetVx() const
+  {
+    return m_LinearVelocity.GetX();
+  }
+
+  /**
+   * Sets the velocity in the x-direction
+   * @param vx velocity in x-direction
+   */
+  inline void SetVx(kt_double vx)
+  {
+    m_LinearVelocity.SetX(vx);
+  }
+
+  /**
+   * Returns the velocity in the y-direction
+   * @return velocity in y-direction
+   */
+  inline kt_double GetVy() const
+  {
+    return m_LinearVelocity.GetY();
+  }
+
+  /**
+   * Sets the velocity in the y-direction
+   * @param vy velocity in y-direction
+   */
+  inline void SetVy(kt_double vy)
+  {
+    m_LinearVelocity.SetY(vy);
+  }
+
+  /**
+   * Returns the linear velocity vector
+   * @return linear velocity vector
+   */
+  inline const Vector2<kt_double> & GetLinearVelocity() const
+  {
+    return m_LinearVelocity;
+  }
+
+  /**
+   * Sets the linear velocity vector
+   * @param rLinearVelocity linear velocity vector
+   */
+  inline void SetLinearVelocity(const Vector2<kt_double> & rLinearVelocity)
+  {
+    m_LinearVelocity = rLinearVelocity;
+  }
+
+  /**
+   * Returns the angular velocity around the z-axis
+   * @return angular velocity
+   */
+  inline kt_double GetAngularVel() const
+  {
+    return m_AngularVel;
+  }
+
+  /**
+   * Sets the angular velocity around the z-axis
+   * @param angularVel angular velocity
+   */
+  inline void SetAngularVel(kt_double angularVel)
+  {
+    m_AngularVel = angularVel;
+  }
+
+  /**
+   * Returns the covariance matrix
+   * @return covariance matrix
+   */
+  inline Matrix3 GetCovariance() const
+  {
+    return covariance;
+  }
+
+  /**
+   * Sets the covariance matrix
+   * @param rCovariance covariance matrix
+   */
+  inline void SetCovariance(const Matrix3 & rCovariance)
+  {
+    covariance = rCovariance;
+  }
+
+  /**
+   * Assignment operator
+   */
+  inline Vel2 & operator=(const Vel2 & rOther)
+  {
+    m_LinearVelocity = rOther.m_LinearVelocity;
+    m_AngularVel = rOther.m_AngularVel;
+    covariance = rOther.covariance;
+    return *this;
+  }
+
+  /**
+   * Equality operator
+   */
+  inline bool operator==(const Vel2 & rOther) const
+  {
+    return m_LinearVelocity == rOther.m_LinearVelocity && m_AngularVel == rOther.m_AngularVel;
+  }
+
+  /**
+   * Inequality operator
+   */
+  inline bool operator!=(const Vel2 & rOther) const
+  {
+    return m_LinearVelocity != rOther.m_LinearVelocity || m_AngularVel != rOther.m_AngularVel;
+  }
+
+  /**
+   * In place Vel2 addition.
+   */
+  inline void operator+=(const Vel2 & rOther)
+  {
+    m_LinearVelocity += rOther.m_LinearVelocity;
+    m_AngularVel += rOther.m_AngularVel;
+  }
+
+  /**
+   * Binary Vel2 addition
+   * @param rOther another velocity
+   * @return sum of the velocities
+   */
+  inline Vel2 operator+(const Vel2 & rOther) const
+  {
+    return Vel2(m_LinearVelocity + rOther.m_LinearVelocity,
+                m_AngularVel + rOther.m_AngularVel);
+  }
+
+  /**
+   * Binary Vel2 subtraction
+   * @param rOther another velocity
+   * @return difference of the velocities
+   */
+  inline Vel2 operator-(const Vel2 & rOther) const
+  {
+    return Vel2(m_LinearVelocity - rOther.m_LinearVelocity,
+                m_AngularVel - rOther.m_AngularVel);
+  }
+
+  /**
+   * In place Vel2 subtraction.
+   */
+  inline void operator-=(const Vel2 & rOther)
+  {
+    m_LinearVelocity -= rOther.m_LinearVelocity;
+    m_AngularVel -= rOther.m_AngularVel;
+  }
+
+  /**
+   * Write this velocity onto an output stream
+   * @param rStream output stream
+   * @param rVel velocity object to write
+   */
+  friend inline std::ostream & operator<<(std::ostream & rStream, const Vel2 & rVel)
+  {
+    rStream << rVel.GetVx() << " " << rVel.GetVy() << " " << rVel.GetAngularVel();
+    return rStream;
+  }
+
+  /**
+   * Read velocity from an input stream
+   * @param rStream input stream
+   * @param rVel velocity object to populate
+   */
+  friend inline std::istream & operator>>(std::istream & rStream, Vel2 & rVel)
+  {
+    kt_double vx, vy, ang;
+    rStream >> vx >> vy >> ang;
+    rVel.SetLinearVelocity(Vector2<kt_double>(vx, vy));
+    rVel.SetAngularVel(ang);
+    return rStream;
+  }
+
+  // Serialization support
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    ar & BOOST_SERIALIZATION_NVP(m_LinearVelocity);
+    ar & BOOST_SERIALIZATION_NVP(m_AngularVel);
+    ar & BOOST_SERIALIZATION_NVP(covariance);
+  }
+
+private:
+  Vector2<kt_double> m_LinearVelocity;
+  kt_double m_AngularVel;
+  Matrix3 covariance;
+};    // Vel2
+
+/**
+ * Type declaration of Vel2 vector
+ */
+typedef std::vector<Vel2> Vel2Vector;
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////

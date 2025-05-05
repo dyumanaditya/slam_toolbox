@@ -12,12 +12,12 @@ namespace solver_plugins
 {
 
 /**
- * Cost function for a velocity constraint
+ * Cost function for a velocity constraint with covariance-based weighting
  */
 struct VelocityConstraintCost
 {
-  VelocityConstraintCost(double vx, double vy, double vtheta, double dt, double weight)
-  : vx_(vx), vy_(vy), vtheta_(vtheta), dt_(dt), w_(weight)
+  VelocityConstraintCost(double vx, double vy, double vtheta, double dt, const Eigen::Matrix3d& sqrt_information)
+  : vx_(vx), vy_(vy), vtheta_(vtheta), dt_(dt), sqrt_information_(sqrt_information)
   {}
 
   template <typename T>
@@ -25,46 +25,32 @@ struct VelocityConstraintCost
                   const T* x_new, const T* y_new, const T* yaw_new,
                   T* residual) const
   {
+    // Predicted motion based on velocity
     T predicted_x  = *x_old  + T(vx_) * T(dt_);
     T predicted_y  = *y_old  + T(vy_) * T(dt_);
     T predicted_th = *yaw_old + T(vtheta_) * T(dt_);
 
-    // Actual new pose from parameter blocks
-    T diff_x  = *x_new  - predicted_x;
-    T diff_y  = *y_new  - predicted_y;
-    T diff_th = *yaw_new - predicted_th;
-    // Possibly wrap angles: diff_th = ceres::atan2(ceres::sin(diff_th), ceres::cos(diff_th));
+    // Compute residuals
+    Eigen::Matrix<T, 3, 1> r;
+    r(0) = *x_new  - predicted_x;
+    r(1) = *y_new  - predicted_y;
+    r(2) = *yaw_new - predicted_th;
 
-    // Weighted residual
-    residual[0] = T(w_) * diff_x;
-    residual[1] = T(w_) * diff_y;
-    residual[2] = T(w_) * diff_th;
+    // Apply Square Root Information Matrix: residual' = sqrt_information * residual
+    Eigen::Matrix<T, 3, 1> weighted_r = sqrt_information_.template cast<T>() * r;
 
-    // Predicted new pose from old_pose + vel * dt
-    // old: (ox, oy, oth)
-    // new: (nx, ny, nth)
-    // velocity: (vx_, vy_, vtheta_)
-
-    // T predicted_x  = old_pose[0] + T(vx_) * T(dt_);
-    // T predicted_y  = old_pose[1] + T(vy_) * T(dt_);
-    // T predicted_th = old_pose[2] + T(vtheta_) * T(dt_);
-
-    // // We'll do a minimal difference, but you could also wrap angles
-    // T diff_th = new_pose[2] - predicted_th;
-    // // Optionally: diff_th = ceres::atan2(ceres::sin(diff_th), ceres::cos(diff_th));
-
-    // // Weighted residual
-    // residual[0] = T(w_) * (new_pose[0] - predicted_x);
-    // residual[1] = T(w_) * (new_pose[1] - predicted_y);
-    // residual[2] = T(w_) * diff_th;
+    // Assign weighted residuals to output
+    residual[0] = weighted_r(0);
+    residual[1] = weighted_r(1);
+    residual[2] = weighted_r(2);
 
     return true;
   }
 
-  // measured velocity in the local frame
+  // Measured velocity in the local frame
   double vx_, vy_, vtheta_;
   double dt_;
-  double w_;
+  Eigen::Matrix3d sqrt_information_;
 };
 
 /*****************************************************************************/
@@ -409,8 +395,7 @@ void CeresSolver::AddVelocityConstraint(
   int new_node_id,
   double vx, double vy, double vtheta,
   double dt,
-  double weight)
-/*****************************************************************************/
+  const karto::Matrix3 & cov)
 {
   if (!problem_) {
     RCLCPP_ERROR(node_->get_logger(), "CeresSolver: Problem is null, cannot add velocity constraint!");
@@ -426,14 +411,27 @@ void CeresSolver::AddVelocityConstraint(
   double* old_pose_data = &it_old->second[0];
   double* new_pose_data = &it_new->second[0];
 
-  // Build cost function
+  // Step 1: Convert Matrix3 (custom type) to Eigen for numerical operations
+  Eigen::Matrix3d covariance;
+  for (size_t i = 0; i < 3; ++i) {
+    for (size_t j = 0; j < 3; ++j) {
+      covariance(i, j) = cov(i, j);
+    }
+  }
+
+  // Step 2: Compute Information Matrix (Inverse Covariance)
+  Eigen::Matrix3d information_matrix = covariance.inverse();
+
+  // Step 3: Compute Square Root Information Matrix (Cholesky Decomposition)
+  Eigen::Matrix3d sqrt_information = information_matrix.llt().matrixU();
+
+  // Step 4: Build cost function using the square root information matrix
   ceres::CostFunction* cost_function =
     new ceres::AutoDiffCostFunction<VelocityConstraintCost, 3, 1, 1, 1, 1, 1, 1>(
-      new VelocityConstraintCost(vx, vy, vtheta, dt, weight));
+      new VelocityConstraintCost(vx, vy, vtheta, dt, sqrt_information));
 
-  // For a typical 2D problem, we probably do NOT want an additional robust loss here
-  // but if you do, you can reuse loss_function_ or pass in a new one.
-  ceres::LossFunction* used_loss = nullptr;  // could be e.g. loss_function_;
+  // Step 5: Add residual block to the Ceres problem
+  ceres::LossFunction* used_loss = nullptr;  // No additional loss function (optional)
 
   problem_->AddResidualBlock(
     cost_function,
@@ -441,6 +439,7 @@ void CeresSolver::AddVelocityConstraint(
     &old_pose_data[0], &old_pose_data[1], &old_pose_data[2],
     &new_pose_data[0], &new_pose_data[1], &new_pose_data[2]);
 
+  // Step 6: Logging
   RCLCPP_INFO(node_->get_logger(),
     "CeresSolver: Added velocity constraint between node %d and %d with dt=%.3f, v=%.3f,%.3f,%.3f",
     old_node_id, new_node_id, dt, vx, vy, vtheta);

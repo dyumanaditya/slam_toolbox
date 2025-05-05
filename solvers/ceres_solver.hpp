@@ -50,7 +50,7 @@ public:
     int new_node_id,
     double vx, double vy, double vtheta,
     double dt,
-    double weight);
+    const karto::Matrix3 & covariance);
   // Get graph stored
   virtual std::unordered_map<int, Eigen::Vector3d> * getGraph();
   // Removes a node from the solver correction table

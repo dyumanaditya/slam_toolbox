@@ -250,7 +250,7 @@ void SlamToolbox::setROSInterfaces()
 
   // subscribe to velocity
   if (use_velocity_constraints_) {
-    velocity_sub_ = this->create_subscription<geometry_msgs::msg::TwistStamped>(
+    velocity_sub_ = this->create_subscription<geometry_msgs::msg::TwistWithCovarianceStamped>(
       velocity_topic_,
       rclcpp::QoS(10),
       std::bind(&SlamToolbox::velocityCallback, this, std::placeholders::_1));
@@ -269,14 +269,27 @@ void SlamToolbox::setROSInterfaces()
 
 /*****************************************************************************/
 void SlamToolbox::velocityCallback(
-  geometry_msgs::msg::TwistStamped::ConstSharedPtr twist)
+  geometry_msgs::msg::TwistWithCovarianceStamped::ConstSharedPtr twist)
 /*****************************************************************************/
 {
-  // smapper_->getMapper()->SetLatestVelocity(twist->twist);
-  latest_velocity_ = Vel2(twist->twist.linear.x, twist->twist.linear.y, twist->twist.angular.z);
+  // extract the linear/angular parts
+  double vx  = twist->twist.twist.linear.x;
+  double vy  = twist->twist.twist.linear.y;
+  double ang = twist->twist.twist.angular.z;
+
+  // build a Karto Matrix3 covariance from the first 3×3 block
+  Matrix3 cov;
+  for (uint32_t row = 0; row < 3; ++row) {
+    for (uint32_t col = 0; col < 3; ++col) {
+      // ROS stores covariance as a flat array in row-major order:
+      // index = row*6 + col
+      cov(row, col) = twist->twist.covariance[row * 6 + col];
+    }
+  }
+
+  // now initialize your Vel2 with covariance
+  latest_velocity_ = Vel2(vx, vy, ang, cov);
   velocity_received_ = true;
-  // RCLCPP_INFO(get_logger(), "Received velocity: %f, %f, %f",
-  //   twist->twist.linear.x, twist->twist.linear.y, twist->twist.angular.z);
 }
 
 
